@@ -15,8 +15,8 @@ import java.util.Optional;
 
 public class Function {
 
-    private final String eventGridTopicEndpoint = "https://user-role-events-topic.eastus2-1.eventgrid.azure.net/api/events";
-    private final String eventGridTopicKey = "FWObSItpv8zDesKQBo5bEYvYKWCGZ9yq1wR82E7DmSm5LHhmGaTkJQQJ99BDACHYHv6XJ3w3AAABAZEGBFN8";
+    private final String eventGridTopicEndpoint = "https://giret-event-grid.eastus2-1.eventgrid.azure.net/api/events";
+    private final String eventGridTopicKey = "71sShuulBb31KuAmpGdpNeN3IsajzVOPqX3xVeQxZKd7ICs2mHGWJQQJ99BFACHYHv6XJ3w3AAABAZEGan1n";
 
     private final EventGridPublisherClient<EventGridEvent> client = new EventGridPublisherClientBuilder()
             .endpoint(eventGridTopicEndpoint)
