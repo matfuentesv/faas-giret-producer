@@ -1,6 +1,5 @@
 package com.giret;
 
-
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.core.util.BinaryData;
 import com.azure.messaging.eventgrid.EventGridEvent;
@@ -10,23 +9,20 @@ import com.giret.model.Loan;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
 import java.util.Optional;
-
-
+import com.google.gson.JsonObject;
 
 public class Function {
 
     private final String eventGridTopicEndpoint = "https://giret-event-grid.eastus2-1.eventgrid.azure.net/api/events";
-    private final String eventGridTopicKey = "71sShuulBb31KuAmpGdpNeN3IsajzVOPqX3xVeQxZKd7ICs2mHGWJQQJ99BFACHYHv6XJ3w3AAABAZEGan1n";
+    private final String eventGridTopicKey = "Fr5wIgn4HUcBblvhMD34lg37GLHWVuY1YjkVK9lVACD35ZgyZqU4JQQJ99BGACHYHv6XJ3w3AAABAZEGd6hz";
 
     private final EventGridPublisherClient<EventGridEvent> client = new EventGridPublisherClientBuilder()
             .endpoint(eventGridTopicEndpoint)
             .credential(new AzureKeyCredential(eventGridTopicKey))
             .buildEventGridEventPublisherClient();
 
-
-
-    @FunctionName("createPrestamo")
-    public HttpResponseMessage createPrestamo(
+    @FunctionName("createLoan")
+    public HttpResponseMessage createLoan(
             @HttpTrigger(name = "req", methods = {HttpMethod.POST}) HttpRequestMessage<Optional<Loan>> request,
             final ExecutionContext context) {
 
@@ -36,20 +32,26 @@ public class Function {
                     .build();
         }
 
-        Loan nuevoPrestamo = request.getBody().get();
+        Loan loan = request.getBody().get();
 
+        // Construir payload plano y limpio (solo campos relevantes)
+        JsonObject data = new JsonObject();
+        data.addProperty("prestamoId", loan.getIdPrestamo());
+        data.addProperty("recursoId", loan.getRecursoId());
+
+        // Crear evento Event Grid bien formado
         EventGridEvent event = new EventGridEvent(
-                "Prestamo",
-                "PrestamoCreado.",
-                BinaryData.fromObject(nuevoPrestamo),
-                "1.0"
+                "Prestamo",                // subject
+                "Prestamo.CREADO",         // eventType
+                BinaryData.fromObject(data), // data como JSON
+                "1.0"                      // dataVersion
         );
+
         client.sendEvent(event);
+        context.getLogger().info("Evento Prestamo.CREADO publicado: " + data.toString());
 
         return request.createResponseBuilder(HttpStatus.CREATED)
-                .body("Prestamo creado y evento publicado")
+                .body("Prestamo creado y evento publicado correctamente")
                 .build();
     }
-
-
 }
