@@ -1,6 +1,5 @@
 package com.giret;
 
-
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -20,7 +19,6 @@ import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-
 public class Function {
 
     private final String eventGridTopicEndpoint = "https://giret-event-grid.eastus2-1.eventgrid.azure.net/api/events";
@@ -31,8 +29,9 @@ public class Function {
             .credential(new AzureKeyCredential(eventGridTopicKey))
             .buildEventGridEventPublisherClient();
 
-
-
+    /**
+     * Function para actualizar recurso (ej. marcar como prestado)
+     */
     @FunctionName("updateResource")
     public HttpResponseMessage updateResource(
             @HttpTrigger(name = "req", methods = {HttpMethod.POST})
@@ -40,10 +39,10 @@ public class Function {
             final ExecutionContext context) {
 
         Logger logger = context.getLogger();
-        logger.info("🚀 Ejecutando Function 'createRecurso'...");
+        logger.info("🚀 Ejecutando Function 'updateResource'...");
 
         if (!request.getBody().isPresent()) {
-            logger.warning("Body vacío");
+            logger.warning("⚠️ Body vacío");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("Body es requerido")
                     .build();
@@ -64,7 +63,7 @@ public class Function {
             logger.info("✅ Evento 'Recurso.PRESTADO' publicado a Event Grid");
 
             return request.createResponseBuilder(HttpStatus.CREATED)
-                    .body("Recurso creado y evento publicado correctamente")
+                    .body("Recurso actualizado y evento publicado correctamente")
                     .build();
 
         } catch (Exception e) {
@@ -76,6 +75,9 @@ public class Function {
         }
     }
 
+    /**
+     * Function para actualizar préstamo (ej. marcar como devuelto)
+     */
     @FunctionName("updateLoan")
     public HttpResponseMessage updateLoan(
             @HttpTrigger(name = "req", methods = {HttpMethod.POST})
@@ -86,20 +88,20 @@ public class Function {
         logger.info("🚀 Ejecutando Function 'updateLoan'...");
 
         if (!request.getBody().isPresent()) {
-            logger.warning("Body vacío");
+            logger.warning("⚠️ Body vacío");
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
                     .body("Body es requerido")
                     .build();
         }
 
         try {
-            UpdateLoan nuevoRecurso = request.getBody().get();
-            logger.info("📦 Payload recibido: " + nuevoRecurso);
+            UpdateLoan updateLoan = request.getBody().get();
+            logger.info("📦 Payload recibido: " + updateLoan);
 
             EventGridEvent event = new EventGridEvent(
                     "Prestamo",
                     "Prestamo.DEVUELTO",
-                    BinaryData.fromObject(nuevoRecurso),
+                    BinaryData.fromObject(updateLoan),
                     "1.0"
             );
 
@@ -107,11 +109,11 @@ public class Function {
             logger.info("✅ Evento 'Prestamo.DEVUELTO' publicado a Event Grid");
 
             return request.createResponseBuilder(HttpStatus.CREATED)
-                    .body("Recurso creado y evento publicado correctamente")
+                    .body("Préstamo actualizado y evento publicado correctamente")
                     .build();
 
         } catch (Exception e) {
-            logger.severe("💥 Error en updateResource: " + e.getMessage());
+            logger.severe("💥 Error en updateLoan: " + e.getMessage());
             e.printStackTrace();
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage())
@@ -119,23 +121,9 @@ public class Function {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Function para crear préstamo nuevo
+     */
     @FunctionName("createPrestamo")
     public HttpResponseMessage createPrestamo(
             @HttpTrigger(name = "req", methods = {HttpMethod.POST})
@@ -164,20 +152,18 @@ public class Function {
             );
 
             client.sendEvent(event);
-            logger.info("✅ Prestamo 'Prestamo.CREADO' publicado a Event Grid");
+            logger.info("✅ Evento 'Prestamo.CREADO' publicado a Event Grid");
 
             return request.createResponseBuilder(HttpStatus.CREATED)
-                    .body("Prestamo creado y evento publicado correctamente")
+                    .body("Préstamo creado y evento publicado correctamente")
                     .build();
 
         } catch (Exception e) {
-            logger.severe("💥 Error en createRecurso: " + e.getMessage());
+            logger.severe("💥 Error en createPrestamo: " + e.getMessage());
             e.printStackTrace();
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage())
                     .build();
         }
     }
-
-
 }
