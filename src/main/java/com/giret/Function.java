@@ -11,6 +11,7 @@ import com.azure.messaging.eventgrid.EventGridPublisherClient;
 import com.azure.messaging.eventgrid.EventGridPublisherClientBuilder;
 import com.giret.model.Loan;
 import com.giret.model.Resource;
+import com.giret.model.UpdateLoan;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -74,6 +75,64 @@ public class Function {
                     .build();
         }
     }
+
+    @FunctionName("updateLoan")
+    public HttpResponseMessage updateLoan(
+            @HttpTrigger(name = "req", methods = {HttpMethod.POST})
+            HttpRequestMessage<Optional<UpdateLoan>> request,
+            final ExecutionContext context) {
+
+        Logger logger = context.getLogger();
+        logger.info("🚀 Ejecutando Function 'updateLoan'...");
+
+        if (!request.getBody().isPresent()) {
+            logger.warning("Body vacío");
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("Body es requerido")
+                    .build();
+        }
+
+        try {
+            UpdateLoan nuevoRecurso = request.getBody().get();
+            logger.info("📦 Payload recibido: " + nuevoRecurso);
+
+            EventGridEvent event = new EventGridEvent(
+                    "Prestamo",
+                    "Prestamo.DEVUELTO",
+                    BinaryData.fromObject(nuevoRecurso),
+                    "1.0"
+            );
+
+            client.sendEvent(event);
+            logger.info("✅ Evento 'Prestamo.DEVUELTO' publicado a Event Grid");
+
+            return request.createResponseBuilder(HttpStatus.CREATED)
+                    .body("Recurso creado y evento publicado correctamente")
+                    .build();
+
+        } catch (Exception e) {
+            logger.severe("💥 Error en updateResource: " + e.getMessage());
+            e.printStackTrace();
+            return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
